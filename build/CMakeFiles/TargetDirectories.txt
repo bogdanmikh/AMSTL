@@ -1,0 +1,3 @@
+C:/Projects/AMSTL/build/CMakeFiles/AMSTL.dir
+C:/Projects/AMSTL/build/CMakeFiles/ALL_BUILD.dir
+C:/Projects/AMSTL/build/CMakeFiles/ZERO_CHECK.dir
