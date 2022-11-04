@@ -1,7 +1,5 @@
 namespace amstl {
-    template <typename type>
-    class vec2 {
-        public:
+    struct vec2 {
         double x;
         double y;
     };
