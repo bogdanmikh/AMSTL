@@ -1,75 +1,169 @@
 //
 // Created by bogdan on 02.09.2023.
 //
-#include <iostream>
-
 #pragma once
 
+#include <iostream>
+#include <optional>
+
 namespace amstl {
-    template<typename T>
+    template<typename K, typename V>
     class BinaryTree {
     private:
         struct Node {
-            Node(T value) :
-                    value(value), left(nullptr), right(nullptr) {
+        private:
+        int32_t getHeight(Node *node) {
+            return (node == nullptr) ? 0 : node->h;
+        }
+        public:
+            Node(K key, V value) :
+                    key(key)
+                    , value(value)
+                    , left(nullptr)
+                    , right(nullptr)
+                    , h(0) {
             }
-
-            T value;
+            K key;
+            V value;
             Node *left;
             Node *right;
+            int32_t h;
+            void updateHeight() {
+                h = std::max(getHeight(left), getHeight(right)) + 1;
+            }
+            int32_t getBalance() {
+                return getHeight(left) - getHeight(right);
+            }
         };
 
-        void printTree(const Node* node) {
-            if (!node) return;
-            printTree(node->left);
-            std::cout << node->value << " ";
-            printTree(node->right);
+        /// add node in tree
+        Node* insert(Node* node, const K& key, const V& value) {
+            if (node == nullptr) {
+                return new Node(key, value);
+            }
+            if (key < node->key) {
+                node->left = insert(node->left, key, value);
+            } else if (key > node->key) {
+                node->right = insert(node->right, key, value);
+            }
+            node = balancing(node);
+            return node;
         }
 
-        void insert(Node* node) {
-            size++;
-            if (head == nullptr) {
-                head = node;
+        /// find element
+        std::optional<Node*> find(const K& key) {
+            if (head == nullptr) return {};
+            Node *insertion = head;
+            while (insertion->key != key) {
+                if (key > insertion->key) {
+                    if (insertion->right == nullptr) return {};
+                    insertion = insertion->right;
+                } else {
+                    if (insertion->left == nullptr) return {};
+                    insertion = insertion->left;
+                }
+            }
+            if (key == insertion->key) {
+                return insertion;
+            }
+            return {};
+        }
+
+        // start block balancing
+        Node* rotateLeft(Node* node) {
+            Node* p = node->right;
+            node->right = p->left;
+            p->left = node;
+            node->updateHeight();
+            p->updateHeight();
+            return p;
+        }
+
+        Node* rotateRight(Node* node) {
+            Node* q = node->left;
+            node->left = q->right;
+            q->right = node;
+            node->updateHeight();
+            q->updateHeight();
+            return q;
+        }
+
+        Node* balancing(Node* node) {
+            node->updateHeight();
+            int balanceFactor = node->getBalance();
+            if (balanceFactor > 1) {
+                if (node->left->getBalance() < 0) {
+                    node->left = rotateLeft(node->left);
+                }
+                node = rotateRight(node);
+            } else if (balanceFactor < -1) {
+                if (node->right->getBalance() > 0) {
+                    node->right = rotateRight(node->right);
+                }
+                node = rotateLeft(node);
+            }
+
+            return node;
+        }
+        // end block balancing
+
+        // start block output
+        struct Trunk {
+            Trunk *prev;
+            std::string str;
+
+            Trunk(Trunk *prev, std::string str) {
+                this->prev = prev;
+                this->str = str;
+            }
+        };
+        void showTrunks(Trunk *p) {
+            if (p == nullptr) {
                 return;
             }
-            Node *current = head;
-            while (current->left != nullptr || current->right != nullptr) {
-                if (node->value > current->value) {
-                    if (current->right == nullptr) break;
-                    current = current->right;
-                } else {
-                    if (current->left == nullptr) break;
-                    current = current->left;
-                }
+
+            showTrunks(p->prev);
+            std::cout << p->str;
+        }
+
+        void printTree(Node* root, Trunk *prev, bool isLeft) {
+            if (root == nullptr) {
+                return;
             }
-            if (node->value > current->value) {
-                current->right = node;
+
+            std::string prev_str = "    ";
+            Trunk *trunk = new Trunk(prev, prev_str);
+
+            printTree(root->right, trunk, true);
+
+            if (!prev) {
+                trunk->str = "---";
+            } else if (isLeft) {
+                trunk->str = ".---";
+                prev_str = "   |";
             } else {
-                current->left = node;
+                trunk->str = "`---";
+                prev->str = prev_str;
             }
-        }
 
-        void deleteAll(Node* node) {
-            if (node == nullptr) return;
-            deleteAll(node->left);
-            deleteAll(node->right);
-            delete node;
-        }
+            showTrunks(trunk);
+            std::cout << " " << root->key << std::endl;
 
-        void remove(Node* node) {
+            if (prev) {
+                prev->str = prev_str;
+            }
+            trunk->str = "   |";
+
+            printTree(root->left, trunk, false);
+        }
+        // end block output
+
+        /// clear tree
+        void free(Node* node) {
             if (!node) return;
-            if (node == head) {
-                head = nullptr;
-                delete node;
-            } else {
-                if (node->left) {
-                    remove(node->left);
-                }
-                if (node->right) {
-                    remove(node->right);
-                }
-                delete node;
-            }
+            free(node->left);
+            free(node->right);
+            delete node;
         }
 
         Node *head = nullptr;
@@ -82,51 +176,34 @@ namespace amstl {
 
         void clear() {
             size = 0;
-            deleteAll(head->left);
-            deleteAll(head->right);
-            delete head;
+            free(head);
+            head = nullptr;
         }
 
-
-        Node* find(const T& value) {
-            if (head == nullptr) return false;
-            Node *insertion = head;
-            while (insertion->value != value) {
-                if (value > insertion->value) {
-                    if (insertion->right == nullptr) return nullptr;
-                    insertion = insertion->right;
-                } else {
-                    if (insertion->left == nullptr) return nullptr;
-                    insertion = insertion->left;
-                }
+        void add(const K& key, const V& value) {
+            if (!head) {
+                head = new Node(key, value);
+                return;
             }
-            if (value == insertion->value) {
-                return insertion;
-            }
-            return nullptr;
-        }
-
-        void add(const T& value) {
-            Node *node = new Node(value);
-            if (head == nullptr) {
-                head = node;
-            } else {
-                insert(node);
-            }
-        }
-
-        void erase(const T& value) {
-            Node* node = find(value);
-            if (!node) return;
-            remove(node);
+            insert(head, key, value);
         }
 
         void print() {
-            printTree(head);
+            printTree(head, nullptr, false);
         }
 
         uint32_t getSize() {
             return size;
+        }
+
+        V& operator[](const K& key) {
+            std::optional<Node*> node = find(key);
+            if(!node.has_value()) {
+                Node* inserted = new Node(key, V());
+                insert(inserted);
+                return inserted->value;
+            }
+            return node.value()->value;
         }
     };
 }

@@ -7,41 +7,41 @@ namespace amstl {
 template <typename T>
     class ArrayList {
     private:
-        uint32_t _size;
-        uint32_t reserve_t;
+        uint32_t m_size;
+        uint32_t m_reserve;
         const uint32_t reserve_start = 10;
         T *data;
 
     public:
-        inline ArrayList() : _size(0) {
-            reserve_t = reserve_start;
-            data = new T[reserve_t];
+        inline ArrayList() : m_size(0) {
+            m_reserve = reserve_start;
+            data = new T[m_reserve];
         }
         // возращает кол-во текущих элементов
         inline int size() {
-            return _size;
+            return m_size;
         }          
         // добавляет в конец массива элемент
         void pushBack(const T &Val) {
-            if (++_size <= reserve_t) {
-                data[_size - 1] = Val;
+            if (++m_size <= m_reserve) {
+                data[m_size - 1] = Val;
             } else {
-                reserve_t += _size;
-                reserve(reserve_t);
-                data[_size++] = Val;
+                m_reserve += m_size;
+                reserve(m_reserve);
+                data[m_size++] = Val;
             }
         }
         // добавляет в начало массива элемент
         void pushFront(const T &Val) {
-            if (++_size <= reserve_t) {
-                for (int i = _size - 1; i > 0; i--) {
+            if (++m_size <= m_reserve) {
+                for (int i = m_size - 1; i > 0; i--) {
                     data[i] = data[i - 1];
                 }
                 data[0] = Val;
             } else {
-                reserve_t += _size;
-                reserve(reserve_t);
-                for (int i = _size - 1; i > 0; i--) {
+                m_reserve += m_size;
+                reserve(m_reserve);
+                for (int i = m_size - 1; i > 0; i--) {
                     data[i] = data[i - 1];
                 }
                 data[0] = Val;
@@ -49,42 +49,42 @@ template <typename T>
         }
         // оператор возращения значения 
         T& operator [] (uint32_t i) {
-            assert(i >=0 && i < _size);
+            assert(i >=0 && i < m_size);
             return data[i];
         }
         // удаляет из конца элемент
         void popBack() {
-            if (_size == 0) return;
-            T *data_clone = new T[reserve_t];
-            for (int i = 0; i < _size - 1; i++) {
+            if (m_size == 0) return;
+            T *data_clone = new T[m_reserve];
+            for (int i = 0; i < m_size - 1; i++) {
                 data_clone[i] = data[i];
             }
-            _size--;
+            m_size--;
             delete[] data;
-            T *data = new T[reserve_t];
-            for (int i = 0; i < _size; i++) {
+            T *data = new T[m_reserve];
+            for (int i = 0; i < m_size; i++) {
                 data[i] = data_clone[i];
             }
             delete[] data_clone;
         }
         // возвращает 1 элемент    
         inline T begin() {
-            return (_size != 0) ? data[0] : T;
+            return (m_size != 0) ? data[0] : T{};
         }        
         // возвращает _size-ный элемент    
         inline T last() {
-            return data[_size - 1];
+            return data[m_size - 1];
         }           
         // удаляет определенный элемент в списке
         void erase(const int &index) {
-            T *data_clone = new T[reserve_t];
-            for (int i = 0; i < _size - 1; i++) {
+            T *data_clone = new T[m_reserve];
+            for (int i = 0; i < m_size - 1; i++) {
                 data_clone[i] = data[i];
             }
-            _size--;
+            m_size--;
             delete[] data;
-            T *data = new T[reserve_t];
-            for (int i = 0; i < _size; i++) {
+            T *data = new T[m_reserve];
+            for (int i = 0; i < m_size; i++) {
                 if (i == index) {
                     continue;
                 } else if (i > index) {
@@ -98,30 +98,34 @@ template <typename T>
         // очищает список 
         inline void clear() {
             delete[] data;
-            reserve_t = reserve_start;
-            _size = 0;
-            T *data = new T[reserve_t];
+            m_reserve = reserve_start;
+            m_size = 0;
+            T *data = new T[m_reserve];
         }        
         // задает кол-во элементов в список
         void resize(const int &res) {
-            T *data_clone = new T[_size];
-            for (int i = 0; i < _size; i++) {
+            T *data_clone = new T[m_size];
+            for (int i = 0; i < m_size; i++) {
                 data_clone[i] = data[i];
             }
             delete[] data;
             T *data = new T[res];
-            for (int i = 0; i < res; i++) {
+            for (int i = 0; i < (m_size < res) ? m_size : res; i++) {
                 data[i] = data_clone[i];
             }
+            m_size = res;
             delete[] data_clone;
+        }
+        void reserve(const uint32_t newReserve) {
+            m_reserve = newReserve;
         }
         // возращает true если список пустой
         inline bool isEmpty() {
-            return (_size == 0) ? true : false;
+            return (m_size == 0) ? true : false;
         }
         // выводит список
         void printList() {
-            for (int i = 0; i < _size; i++) {
+            for (int i = 0; i < m_size; i++) {
                 std::cout << data[i] << " ";
             }
             std::cout << std::endl;
