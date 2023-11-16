@@ -13,9 +13,6 @@ namespace amstl {
         void add(const T& value) {
             list.pushBack(value);
         }
-        void erase(int index) {
-            list.erase(index);
-        }
         inline int32_t size() {
             return list.size();
         }
